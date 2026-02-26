@@ -1,42 +1,32 @@
 /**
  * Database Connection Pool Configuration
- * إعدادات مجموعة اتصالات MySQL - مُحسّنة لـ 1GB RAM
+ * PostgreSQL for Replit
  */
 
-import mysql from 'mysql2/promise';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-// إنشاء مجموعة اتصالات (Connection Pool)
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  
-  // ⚠️ تحسينات للرام المحدود (1GB)
-  waitForConnections: true,    // انتظار لو كل الاتصالات مشغولة
-  connectionLimit: 5,          // الحد الأقصى للاتصالات المتزامنة (مهم جداً)
-  queueLimit: 0,               // عدد غير محدود من الطلبات في الانتظار
-  
-  // تحسينات أداء إضافية
-  enableKeepAlive: true,       // الحفاظ على الاتصال نشط
-  keepAliveInitialDelay: 0,    // بدون تأخير في KeepAlive
-  
-  // إعدادات MySQL المحددة
-  charset: 'utf8mb4',          // دعم كامل للعربية والإيموجي
-  timezone: 'Z',               // استخدام UTC للتوقيت
-  dateStrings: false,          // إرجاع التواريخ كـ Date objects
+const { Pool } = pg;
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
-// دالة لاختبار الاتصال (اختيارية)
+// طريقة connect متوافقة مع الكود
+pool.connect = () => {
+  return pool.connect();
+};
+
 export const testConnection = async () => {
   try {
-    const connection = await pool.getConnection();
+    const client = await pool.connect();
     console.log('✅ Database pool test successful');
-    connection.release();
+    client.release();
     return true;
   } catch (error) {
     console.error('❌ Database pool test failed:', error.message);
